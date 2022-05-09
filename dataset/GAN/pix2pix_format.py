@@ -65,7 +65,7 @@ if __name__ == '__main__':
 
     loader = DataLoader(City_pixelDataset(
         transforms=train_transforms, path='/mnt/city_gan'),
-        batch_size=1, shuffle=True, collate_fn=pix_collater)
+        batch_size=8, shuffle=True, collate_fn=pix_collater)
     
     for batch, sample in enumerate(loader):
         imgs_A = sample['real_A']
