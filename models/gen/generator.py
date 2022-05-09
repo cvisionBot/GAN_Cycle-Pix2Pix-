@@ -73,7 +73,7 @@ def CycleGAN_Generator(in_channels, out_channels, module_name):
         model = UNetGenerator(in_channels=in_channels, out_channels=out_channels)
     elif module_name == 'resnet': # block = 9
         model = ResNetGenerator(in_channels=in_channels, out_channels=out_channels)
-    weight_initialize
+    weight_initialize(model)
     return model
 
 
