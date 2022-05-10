@@ -7,7 +7,7 @@ from ..initialize import weight_initialize
 class NLayerDiscriminator(nn.Module):
     def __init__(self, in_channels, n_layers=3, norm_layer=nn.BatchNorm2d):
         super(NLayerDiscriminator, self).__init__()
-        self.ndf = 64
+        self.ndf = 128
         if type(norm_layer) == functools.partial: 
             use_bias = norm_layer.func == nn.InstanceNorm2d
         else:
