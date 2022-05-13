@@ -1,0 +1,32 @@
+model: 'Pix2Pix_GAN'
+dataset_name: 'Cityscapes'
+gen_in_channels: 3
+dis_in_channels: 6
+# generator part
+data_path: '/mnt/city_gan'
+input_size: 256
+
+workers: 4
+epochs: 500
+batch_size: 8
+
+save_freq: 1
+save_dir: './saved'
+gpus: -1
+
+# models
+gen_module: 'resnet'
+
+dis_module: 'path_gan'
+
+gan_mode: 'lsgan'
+lambda_L1: 150
+
+optimizer: 'adam'
+optimizer_options:
+  lr: 2e-3
+
+experimental_option:
+  os: 'windows'
+  callbacks:
+    - 'SWA'
