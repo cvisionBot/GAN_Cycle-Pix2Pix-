@@ -26,7 +26,7 @@ class GAN_Loss(nn.Module):
         prediction (tensor) - discriminator (output)
         target_is_real (bool) - ground truth label (real or fake image)
         '''
-        prediction = prediction['dis_pred']
+        # prediction = prediction['dis_pred']
         if self.gan_mode in ['lsgan', 'vanilla']:
             target_tensor = self.get_target_tensor(prediction, target_is_real)
             loss = self.loss(prediction, target_tensor)

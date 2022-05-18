@@ -2,6 +2,7 @@ import torch
 import pytorch_lightning as pl
 
 from torch import nn
+from torch import optim
 from models.loss.gan_loss import GAN_Loss
 from utils.module_select import get_pix_optimizer
 
@@ -15,45 +16,41 @@ class PixGAN(pl.LightningModule):
         self.discriminator = discriminator
 
         self.gan_loss = GAN_Loss(self.cfg)
-        self.L1_loss = torch.nn.L1Loss()
-        self.L1_loss_weight = self.cfg['lambda_L1']
+        self.mae = torch.nn.L1Loss()
+        self.reconstr_weight = self.cfg['lambda_L1']
 
     def forward(self, input):
         fake_B = self.generator(input)['gen_pred'] # input -> real_A Data
         return fake_B
 
     def training_step(self, batch, batch_idx, optimizer_idx):
-        loss_D, loss_G = self.opt_training_step(batch)
-        self.log('Discriminator_loss', loss_D, prog_bar=True, logger=True, on_step=True, on_epoch=True)
-        self.log('GAN_loss', loss_G, prog_bar=True, logger=True, on_step=True, on_epoch=True)
+        A_img = batch['real_A']
+        B_img = batch['real_B']
+
         if optimizer_idx == 0:
-            return loss_D
-        if optimizer_idx == 1:
+            fake_B = self.geneartor(A_img)['gen_pred']
+            fake_AB = torch.cat((A_img, fake_B), 1)
+            pred_fake = self.dicriminator(fake_AB)['dis_pred']
+            loss_G_val = self.gan_loss(pred_fake, True)
+            Loss_G_idt = self.mae(fake_B, B_img) + self.reconstr_weight
+            loss_G = loss_G_val + Loss_G_idt
+            self.log('Generator_loss', loss_G, prog_bar=True, logger=True, on_step=True, on_epoch=True)
             return loss_G
+        elif optimizer_idx == 1:
+            fake_B = self.generator(A_img)['pred']
+            fake_AB = torch.cat(A_img, fake_B, 1)
+            pred_fake = self.discriminator(fake_AB)['dis_pred']
+            loss_D_fake = self.gan_loss(pred_fake, False)
 
-    def opt_training_step(self, batch):
-        # backward Discriminator Fake
-        fake_B = self.generator(batch['real_A'])['gen_pred']
-        fake_AB = torch.cat((batch['real_A'], fake_B), 1)
-        pred_fake = self.discriminator(fake_AB.detach())
-        loss_D_fake = self.gan_loss(pred_fake, False)
-        # backward Discriminator Real
-        real_AB = torch.cat((batch['real_A'], batch['real_B']), 1)
-        pred_real = self.discriminator(real_AB)
-        loss_D_real = self.gan_loss(pred_real, True)
-        loss_D = (loss_D_fake + loss_D_real) * 0.5
-
-        # backward Generator G(A)
-        loss_G_GAN = self.gan_loss(pred_fake, True)
-        # G(A) = B
-        loss_G_L1 = self.L1_loss(fake_B, batch['real_B']) + self.L1_loss_weight
-        loss_G = loss_G_GAN + loss_G_L1
-        return loss_D, loss_G
+            real_AB = torch.cat((A_img, B_img), 1)
+            pred_real = self.discriminator(real_AB)['dis_pred']
+            loss_D_real = self.gan_loss(pred_real, True)
+            loss_D = (loss_D_fake + loss_D_real) * 0.5
+            self.log('Discriminator_loss', loss_G, prog_bar=True, logger=True, on_step=True, on_epoch=True)
+            return loss_D
     
     def configure_optimizers(self):
         cfg = self.hparams.cfg
-        optim_d, optim_g = get_pix_optimizer(cfg['optimizer'],
-            params=list(self.discriminator.parameters()) + list(self.generator.parameters()),
-            **cfg['optimizer_options']
-        )
-        return [optim_d, optim_g]
+        self.generator_optimizer = optim.Adam(self.generator.parameters(), lr=cfg['learning_rate'], betas=(0.5, 0.999))
+        self.discriminator_optimizer = optim.Adam(self.discriminator.parameters(), lr=cfg['learning_rate'], betas=(0.5, 0.999))
+        return [self.generator_optimizer, self.discriminator_optimizer], []
