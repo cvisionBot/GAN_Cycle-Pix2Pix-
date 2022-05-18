@@ -8,6 +8,7 @@ import torch
 from models.gen.generator import CycleGAN_Generator
 from models.dis.discriminator import CycleGAN_Discriminator
 from module.pix_gan import PixGAN
+from module.cycle_gan import CycleGAN
 
 from utils.utility import preprocess_input
 from utils.yaml_helper import get_train_configs
@@ -31,6 +32,7 @@ def main(cfg, image_name, save):
     model_module = PixGAN.load_from_checkpoint(
         '/home/insig/GAN_Cycle_Pix2Pix/saved/Pix2Pix_GAN_Cityscapes/version_3/checkpoints/last.ckpt', generator=generator, discriminator=discriminator
     )
+
     model_module.eval()
     preds = model_module(image_inp)
     preds = preds * 255

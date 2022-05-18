@@ -8,7 +8,7 @@ from ..initialize import weight_initialize
 class UNetGenerator(nn.Module):
     def __init__(self, in_channels, out_channels, num_downs=8, norm_layer=nn.BatchNorm2d,use_dropout=False):
         super(UNetGenerator, self).__init__()
-        self.ngf = 128
+        self.ngf = 64
         unet_block = UNetSikpConnectionBlock(self.ngf * 8, self.ngf * 8, in_channels=None, submodule=None, norm_layer=norm_layer, innermost=True)  # add the innermost layer
         for i in range(num_downs - 5):          # add intermediate layers with ngf * 8 filters
             unet_block = UNetSikpConnectionBlock(self.ngf * 8, self.ngf * 8, in_channels=None, submodule=unet_block, norm_layer=norm_layer, use_dropout=use_dropout)

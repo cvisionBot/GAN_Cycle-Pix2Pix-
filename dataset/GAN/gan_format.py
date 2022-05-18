@@ -10,7 +10,8 @@ class City_pixelDataset(Dataset):
     def __init__(self, transforms, path=None):
         super(City_pixelDataset, self).__init__()
         self.transforms = transforms
-        self.image_A = glob.glob(path + '/trainB/*.jpg')
+        self.image_A = glob.glob(path + '/trainA/*.jpg')
+        self.image_B = glob.glob(path + '/trainB/*.jpg')
 
     def __len__(self):
         return len(self.image_A)
@@ -20,17 +21,17 @@ class City_pixelDataset(Dataset):
         A_image = cv2.imread(A_image_file)
         A_transformed = self.transforms(image=A_image)
 
-        B_image_file = self.load_real_data_file(A_image_file)
+        B_image_file = self.image_B[index]#self.load_real_data_file(A_image_file)
         B_image = cv2.imread(B_image_file)
         B_transformed = self.transforms(image=B_image)
         return A_transformed, B_transformed
 
     def load_real_data_file(self, img_file):
-        img_file = img_file.replace('B', 'A')
+        img_file = img_file.replace('A', 'B')
         return img_file
 
 
-class Pix2Pix_Format(pl.LightningDataModule):
+class GAN_Format(pl.LightningDataModule):
     def __init__(self, train_path, workers, train_transforms, batch_size=None):
         super().__init__()
         self.train_path = train_path
@@ -64,7 +65,7 @@ if __name__ == '__main__':
     ])
 
     loader = DataLoader(City_pixelDataset(
-        transforms=train_transforms, path='/mnt/city_gan'),
+        transforms=train_transforms, path='/home/insig/GAN_Cycle_Pix2Pix/dataset/datasets/apple2orange'),
         batch_size=8, shuffle=True, collate_fn=pix_collater)
     
     for batch, sample in enumerate(loader):
